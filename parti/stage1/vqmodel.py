@@ -41,7 +41,7 @@ class VQModel(nn.Module):
         return img
     
     def from_pretrained(self, path):
-        return self.load_state_dict(torch.load(path))
+        return self.load_state_dict(torch.load(path, map_location='cpu'))
     
 
 
