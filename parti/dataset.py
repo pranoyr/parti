@@ -33,8 +33,6 @@ class CoCo:
 
         img = stage1_transform(is_train=False, scale=0.8)(img)
 
-
-        print(img.device)
         
         # if self.transform is not None:
         #     img = self.transform(img)
