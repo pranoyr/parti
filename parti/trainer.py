@@ -40,12 +40,12 @@ class Trainer():
 			logging_dir="./log",
 		)
 
-		self.accelerator.init_trackers(
-			project_name=cfg.MODEL.NAME,
-		init_kwargs={"wandb": {
-			   "config" : cfg,
-				"name" : cfg.EXP_NAME}
-		})
+		# self.accelerator.init_trackers(
+		# 	project_name=cfg.MODEL.NAME,
+		# init_kwargs={"wandb": {
+		# 	   "config" : cfg,
+		# 		"name" : cfg.EXP_NAME}
+		# })
 
 		self.model = model
 		self.prepare_data()
