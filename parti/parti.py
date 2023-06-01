@@ -7,7 +7,7 @@ from .utils.transform import stage1_transform
 from PIL import Image, ImageDraw, ImageFont
 import torch.nn as nn
 import torch
-import cv2
+# import cv2
 from .encoder import CLIPTextEmbedder
 from axial_positional_embedding import AxialPositionalEmbedding
 from functools import partial
