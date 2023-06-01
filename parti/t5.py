@@ -75,8 +75,8 @@ class TextEncoder(torch.nn.Module):
 			truncation = True
 		)
 
-		input_ids = encoded.input_ids.to(output_device)
-		attn_mask = encoded.attention_mask.to(output_device)
+		# input_ids = encoded.input_ids.to(output_device)
+		attn_mask = encoded.attention_mask
 
 
 		with torch.no_grad():
