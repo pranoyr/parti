@@ -36,7 +36,7 @@ class Trainer():
 			kwargs_handlers=[kwargs],
 		 #   mixed_precision=mixed_precision,
 			gradient_accumulation_steps=grad_accum_steps, 
-			log_with="wandb",
+			#log_with="wandb",
 			logging_dir="./log",
 		)
 
