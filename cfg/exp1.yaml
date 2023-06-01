@@ -15,7 +15,7 @@ DATA:
       TRAIN_PATH: /home/pranoy/datasets/coco2017
       VAL_PATH: /home/pranoy/datasets/coco2017
       # TEST_PATH : test_images
-      BATCH_SIZE: 16
+      BATCH_SIZE: 8
       NUM_WORKERS: 0
       CROP_IMG_HEIGHT : 224
       CROP_IMG_WIDTH : 224
@@ -27,7 +27,7 @@ TRAIN:
       BASE_LR: 1e-4
       DISTRIBUTED : TRUE
       LR_SCHEDULER:
-            NAME: cosine
+            NAME: multistep
             # MAX_LR : 1e-3
             # GAMMA: 0.1
             MULTISTEPS: [-1] 

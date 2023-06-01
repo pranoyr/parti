@@ -394,9 +394,9 @@ class Transformer(nn.Module):
 
 		# context, context_mask = map(lambda t: t[:, :self.max_text_len], (context, context_mask))
 
-		# if cond_drop_prob > 0:
-		# 	keep_mask = prob_mask_like((b,), 1 - cond_drop_prob, device = device)
-		# 	context_mask = rearrange(keep_mask, 'b -> b 1') & context_mask
+		if cond_drop_prob > 0:
+			keep_mask = prob_mask_like((b,), 1 - cond_drop_prob, device = device)
+			context_mask = rearrange(keep_mask, 'b -> b 1') & context_mask
 
 		# decoder
 		embed = self.transformer_blocks(x, context = context, context_mask = context_mask)

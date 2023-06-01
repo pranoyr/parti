@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch
-from transformers import T5Tokenizer, T5EncoderModel
+# from transformers import T5Tokenizer, T5EncoderModel
 
 # bos_token = torch.tensor([[8193]])
 
@@ -47,10 +47,10 @@ from transformers import T5Tokenizer, T5EncoderModel
 # output = encoder(src)
 # print(output.shape)
 
-def get_model(name):
-    print(name)
-    model = T5EncoderModel.from_pretrained('t5-large')
-    return model
+# def get_model(name):
+#     print(name)
+#     model = T5EncoderModel.from_pretrained('t5-large')
+#     return model
 
 
 
