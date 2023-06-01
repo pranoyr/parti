@@ -362,7 +362,7 @@ class Transformer(nn.Module):
 		device, b, n = x.device, *x.shape
 
 
-		print("x.shape", x.shape)
+		print("x.shape", x.device)
 		# if text embed is provided, no need to encode text (for inference)
 		if not exists(context):
 			# encode text
