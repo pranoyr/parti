@@ -1,0 +1,14 @@
+einops
+numpy
+pillow
+torch>=1.13
+torchvision
+lpips
+kornia
+accelerate
+tqdm
+pycocotools
+datasets
+sentencepiece
+open_clip_torch
+transformers
