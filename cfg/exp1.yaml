@@ -4,8 +4,8 @@ MODEL:
       #RESUME: checkpoints/checkpoint_iter8000_exp1.pth
       # PRETRAINED : data/ckpt/res50-PA45.7_MJE72.0_MVE85.3_3dpw.pt
       D_MODEL: 1024
-      DEPTH: 6
-      NUM_HEADS: 8
+      DEPTH: 16
+      NUM_HEADS: 12
       PATCH_SIZE: 8
       MLP_DIM: 2048
       DROPOUT : 0.1
