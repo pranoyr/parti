@@ -188,6 +188,7 @@ class Trainer():
         for epoch in range(start_epoch, self.cfg.TRAIN.EPOCHS):
             with tqdm(self.train_loader, dynamic_ncols=True, disable=not self.accelerator.is_main_process) as train_loader:
                 for (img, text) in train_loader:
+                    print(img.shape)
                     with self.accelerator.accumulate(self.model):
                         # img=img.to(self.gpu_id)
                         with self.accelerator.autocast():
