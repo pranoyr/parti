@@ -43,7 +43,7 @@ def main(cfg):
 	# np.random.seed(seed)
 	# random.seed(seed)
 	# init wandb
-	wandb.init(project=cfg.MODEL.NAME, config=cfg, name=cfg.EXP_NAME)
+	# wandb.init(project=cfg.MODEL.NAME, config=cfg, name=cfg.EXP_NAME)
 
 	# load model
 	# if cfg.MODEL.NAME == 'parti':

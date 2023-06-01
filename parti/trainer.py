@@ -8,7 +8,7 @@ from timm.scheduler.cosine_lr import CosineLRScheduler
 # from timm.optim import Adafactor
 
 from transformers.optimization import Adafactor, AdafactorSchedule
-
+from tqdm.auto import tqdm
 from torch.utils.data.distributed import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
 import os
@@ -36,11 +36,22 @@ class Trainer():
             kwargs_handlers=[kwargs],
          #   mixed_precision=mixed_precision,
             gradient_accumulation_steps=grad_accum_steps, 
+            log_with="wandb",
+            logging_dir="./log",
         )
+
+        self.accelerator.init_trackers(
+            project_name=cfg.MODEL.NAME,
+		init_kwargs={"wandb": {
+               "config" : cfg,
+                "name" : cfg.EXP_NAME}
+        })
 
         self.model = model
         self.prepare_data()
         self.get_training_config()
+
+        self.max_grad_norm = 1.0
 
 
 
@@ -175,58 +186,69 @@ class Trainer():
         self.model.train()
         start_epoch=self.global_step//len(self.train_loader)
         for epoch in range(start_epoch, self.cfg.TRAIN.EPOCHS):
-            # self.train_loader.sampler.set_epoch(epoch)
-            for idx, (img, text) in enumerate(self.train_loader):
-                with self.accelerator.accumulate(self.model):
-                    # img=img.to(self.gpu_id)
-                    with self.accelerator.autocast():
-                        loss=self.model(text, img)
-                    self.losses.update(loss.item(), img.size(0))
+            with tqdm(self.train_loader, dynamic_ncols=True, disable=not self.accelerator.is_main_process) as train_loader:
+                for (img, text) in train_loader:
+                    with self.accelerator.accumulate(self.model):
+                        # img=img.to(self.gpu_id)
+                        with self.accelerator.autocast():
+                            loss=self.model(text, img)
+                        self.losses.update(loss.item(), img.size(0))
 
-                    self.optimizer.zero_grad()
-                    self.accelerator.backward(loss)
-                    # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
-                    self.optimizer.step()
-                    self.scheduler.step()
+                        self.optimizer.zero_grad()
+                        self.accelerator.backward(loss)
+                        if self.accelerator.sync_gradients:
+                            self.accelerator.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
+                        # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+                        self.optimizer.step()
+                        self.scheduler.step()
 
-                # torch.cuda.synchronize()
+                    # torch.cuda.synchronize()
 
-                # LOGGING
-                if self.global_step % self.cfg.PRINT_FREQ == 0:
-                    self.progress.display(self.global_step)
+                    train_loader.set_postfix(
+                        ordered_dict={
+                            "Epoch"      : epoch,
+                            "Loss"       : loss.item()
+                        }
+                    )
 
-                if self.global_step % self.cfg.TRAIN_FREQ == 0:
-                    wandb.log({'train_loss': loss.item()},
-                              step=self.global_step)
-                    lr=self.optimizer.param_groups[0]['lr']
-                    wandb.log({'lr': lr}, step=self.global_step)
+                    # LOGGING
+                    # if self.global_step % self.cfg.PRINT_FREQ == 0:
+                    #     self.accelerator.log({"loss": self.log['loss']}, step=self.global_step)
 
-            # 	if self.global_step % self.cfg.VALID_FREQ == 0:
-            # 		self.model.eval()
-            # 		val_loss = self.validate()
-            # 		self.visualise()
-            # 		self.model.train()
+                    # if self.global_step % self.cfg.TRAIN_FREQ == 0:
+                    #     wandb.log({'train_loss': loss.item()},
+                    #               step=self.global_step)
+                    #     lr=self.optimizer.param_groups[0]['lr']
+                    
 
-            # 		lr = self.optimizer.param_groups[0]['lr']
-            # 		wandb.log({'train_loss': self.losses.avg}, step=self.global_step)
-            # 		wandb.log({'val_loss': val_loss}, step=self.global_step)
-            # 		wandb.log({'lr': lr}, step=self.global_step)
 
-            # 		is_best = val_loss < self.th
-            # 		self.th = min(val_loss, self.th)
-            # 		checkpoint_path = self.cfg.CKPT_DIR + \
-            # 			f"/best_weights_{self.cfg.EXP_NAME}.pth"
-            # 		self.save_checkpoint(
-            # 			self.global_step,  checkpoint_path, is_best=is_best)
 
-                if self.global_step % self.cfg.SAVE_FREQ == 0:
-                    checkpoint_name=self.cfg.CKPT_DIR + \
-                        f"/checkpoint_iter{self.global_step}_{self.cfg.EXP_NAME}.pth"
-                    self.save_checkpoint(
-                        self.global_step, checkpoint_name,  is_best=True)
-                    print("model saved to {}".format(checkpoint_name))
-                    print()
-                self.global_step += 1
+                # 	if self.global_step % self.cfg.VALID_FREQ == 0:
+                # 		self.model.eval()
+                # 		val_loss = self.validate()
+                # 		self.visualise()
+                # 		self.model.train()
+
+                # 		lr = self.optimizer.param_groups[0]['lr']
+                # 		wandb.log({'train_loss': self.losses.avg}, step=self.global_step)
+                # 		wandb.log({'val_loss': val_loss}, step=self.global_step)
+                # 		wandb.log({'lr': lr}, step=self.global_step)
+
+                # 		is_best = val_loss < self.th
+                # 		self.th = min(val_loss, self.th)
+                # 		checkpoint_path = self.cfg.CKPT_DIR + \
+                # 			f"/best_weights_{self.cfg.EXP_NAME}.pth"
+                # 		self.save_checkpoint(
+                # 			self.global_step,  checkpoint_path, is_best=is_best)
+
+                    if self.global_step % self.cfg.SAVE_FREQ == 0 and self.global_step != 0:
+                        checkpoint_name=self.cfg.CKPT_DIR + \
+                            f"/checkpoint_iter{self.global_step}_{self.cfg.EXP_NAME}.pth"
+                        self.save_checkpoint(
+                            self.global_step, checkpoint_name,  is_best=True)
+                        print("model saved to {}".format(checkpoint_name))
+                        print()
+                    self.global_step += 1
 
             print("Epoch " + str(epoch) + " completed")
             print()
