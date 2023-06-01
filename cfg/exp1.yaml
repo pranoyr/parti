@@ -15,7 +15,7 @@ DATA:
       TRAIN_PATH: /home/pranoy/datasets/coco2017
       VAL_PATH: /home/pranoy/datasets/coco2017
       # TEST_PATH : test_images
-      BATCH_SIZE: 8
+      BATCH_SIZE: 100
       NUM_WORKERS: 0
       CROP_IMG_HEIGHT : 224
       CROP_IMG_WIDTH : 224
