@@ -13,6 +13,8 @@ from torch.utils.data.distributed import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
 import os
 from transformers import get_cosine_schedule_with_warmup
+from accelerate import Accelerator
+from accelerate.utils import DistributedDataParallelKwargs
 
 
 
@@ -23,23 +25,48 @@ class Trainer():
     def __init__(self, cfg, model):
         super().__init__()
         self.cfg = cfg
-        self.gpu_id = int(os.environ["LOCAL_RANK"])
+        #self.gpu_id = int(os.environ["LOCAL_RANK"])
         self.global_step = 0
         self.th = math.inf
+        mixed_precision = 'fp16'
+        grad_accum_steps = 8
+
+        kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
+        self.accelerator = Accelerator(
+            kwargs_handlers=[kwargs],
+         #   mixed_precision=mixed_precision,
+            gradient_accumulation_steps=grad_accum_steps, 
+        )
 
         self.model = model
         self.prepare_data()
         self.get_training_config()
 
-        self.model = model.to(self.gpu_id)
-        self.resume_training()
-        self.model = DDP(self.model, device_ids=[self.gpu_id], find_unused_parameters=True)
+
+
+        (
+            self.model,
+            self.optimizer,
+            self.scheduler,
+            self.train_loader,
+            self.val_loader,
+        ) = self.accelerator.prepare(
+            self.model,
+            self.optimizer,
+            self.scheduler,
+            self.train_loader,
+            self.val_loader
+        )
+
+        # self.model = model.to(self.gpu_id)
+        # self.resume_training()
+        #self.model = DDP(self.model, device_ids=[self.gpu_id], find_unused_parameters=True)
     
         
     def init_meter(self):
         """Init meter for training and validation"""
 
-        self.losses = AverageMeter(f'GPU[{self.gpu_id}], Loss', ':.4f')
+        self.losses = AverageMeter(f'Loss', ':.4f')
         self.progress = ProgressMeter(
             len(self.train_loader) * self.cfg.TRAIN.EPOCHS,
             [self.losses])
@@ -50,9 +77,9 @@ class Trainer():
         train_dataset = CoCo(self.cfg.DATA.TRAIN_PATH)
         val_dataset = CoCo(self.cfg.DATA.VAL_PATH)
         self.train_loader = torch.utils.data.DataLoader(
-            train_dataset, batch_size=self.cfg.DATA.BATCH_SIZE, shuffle=False, num_workers=self.cfg.DATA.NUM_WORKERS, sampler=DistributedSampler(train_dataset), pin_memory=True)
+            train_dataset, batch_size=self.cfg.DATA.BATCH_SIZE, shuffle=False, num_workers=self.cfg.DATA.NUM_WORKERS, pin_memory=True)
         self.val_loader = torch.utils.data.DataLoader(
-            val_dataset, batch_size=self.cfg.DATA.BATCH_SIZE, shuffle=False, num_workers=self.cfg.DATA.NUM_WORKERS, sampler=DistributedSampler(val_dataset), pin_memory=True)
+            val_dataset, batch_size=self.cfg.DATA.BATCH_SIZE, shuffle=False, num_workers=self.cfg.DATA.NUM_WORKERS, pin_memory=True)
         print("train dataset size: ", len(train_dataset))
         print("val dataset size: ", len(val_dataset))
         print("Total Iterations: ", len(
@@ -134,29 +161,33 @@ class Trainer():
         if is_best:
             checkpoint={
                 'step': step,
-                'state_dict': self.model.module.state_dict(),
+                'state_dict': self.accelerator.unwrap_model(self.model).state_dict(),
                 'optimizer': self.optimizer.state_dict(),
                 'scheduler': self.scheduler.state_dict()
             }
-            torch.save(checkpoint, filename)
+            self.accelerator.save(checkpoint, filename)
+
 
     def fit(self):
+        self.accelerator.init_trackers("parti")
         """Train the model"""
 
         self.model.train()
         start_epoch=self.global_step//len(self.train_loader)
         for epoch in range(start_epoch, self.cfg.TRAIN.EPOCHS):
-            self.train_loader.sampler.set_epoch(epoch)
+            # self.train_loader.sampler.set_epoch(epoch)
             for idx, (img, text) in enumerate(self.train_loader):
-                img=img.to(self.gpu_id)
-                loss=self.model(text, img)
-                self.losses.update(loss.item(), img.size(0))
+                with self.accelerator.accumulate(self.model):
+                    # img=img.to(self.gpu_id)
+                    with self.accelerator.autocast():
+                        loss=self.model(text, img)
+                    self.losses.update(loss.item(), img.size(0))
 
-                self.optimizer.zero_grad()
-                loss.backward()
-                # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
-                self.optimizer.step()
-                self.scheduler.step()
+                    self.optimizer.zero_grad()
+                    self.accelerator.backward(loss)
+                    # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+                    self.optimizer.step()
+                    self.scheduler.step()
 
                 # torch.cuda.synchronize()
 

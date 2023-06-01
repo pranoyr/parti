@@ -36,7 +36,7 @@ def main(cfg):
 	# torch.set_float32_matmul_precision('high')
 
 	# if cfg.TRAIN.DISTRIBUTED:
-	ddp_setup()
+	#ddp_setup()
 	# seed = cfg.SEED + get_rank()
 	# torch.manual_seed(seed)
 	# torch.cuda.manual_seed(seed)
@@ -52,7 +52,7 @@ def main(cfg):
 	
 	trainer = Trainer(cfg, model)
 	trainer.fit()
-	destroy_process_group()
+	#destroy_process_group()
 
 
 if __name__ == '__main__':

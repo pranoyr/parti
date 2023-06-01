@@ -240,8 +240,8 @@ class Parti(nn.Module):
 
 		dim = 512
 		seq_len = 1024
-		heads = 12
-		depth = 16
+		heads = 8
+		depth = 6
 		vocab_size = 8192
 
 		# self.transformer = Transformer(          # vit vqgan vae
@@ -297,27 +297,7 @@ class Parti(nn.Module):
 		# loss , logits = self.transformer(text, img_token_idcs)
 
 		# try:
-		#visualise
-		rand_num = random.randint(0, len(imgs)-1)
-		out_indices_disp = logits[rand_num].detach() # b l e 
-		out_indices_disp = torch.argmax(out_indices_disp, dim=1)
-				# #print(out_indices_disp)
-				# # check if 8193 is present in out_indices_disp 
-				# ind = torch.where(out_indices_disp == 8193)
-				# if len(ind[0]) > 0:
-				# 	eos_index = ind[0]
-				# 	#print(eos_index)
-				# 	# remove the token
-				# 	try:
-				# 		out_indices_disp = torch.cat((out_indices_disp[:eos_index], out_indices_disp[eos_index+1:]))
-				# 	except:
-				# 		print(out_indices_disp[eos_index])
-				# else:
-				# 	out_indices_disp = out_indices_disp[:-1]
-		# # remove the first token
-		output_image = self.vqgan.decode_from_indice(out_indices_disp.unsqueeze(0))
-		output_image = restore(output_image[0])
-		cv2.imwrite("output.png", output_image)
+		# sc
 		# cv2.imwrite(f"results/{text[rand_num]}.png", output_image)
 		# cv2.waitKey(1)
 
