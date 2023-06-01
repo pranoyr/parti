@@ -29,7 +29,12 @@ class CoCo:
         img = Image.open(os.path.join(self.img_dir, img_name)).convert('RGB')
         ann = np.random.choice(self.coco.loadAnns(annid))['caption']
 
+
+
         img = stage1_transform(is_train=False, scale=0.8)(img)
+
+
+        print(img.device)
         
         # if self.transform is not None:
         #     img = self.transform(img)
