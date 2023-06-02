@@ -36,7 +36,7 @@ TRAIN:
             WARMUP_T : 10000
             # WARMUP_LR_INIT : 1e-6
       OPTIMIZER:
-            NAME: lion
+            NAME: adamw
 
 EXP_NAME: exp1
 OUTPUT_DIR: outputs
