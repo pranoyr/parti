@@ -338,6 +338,7 @@ class Transformer(nn.Module):
 
 		self.transformer_blocks = TransformerBlocks(dim = dim, **kwargs)
 		self.norm = LayerNorm(dim)
+		self.enc_norm = LayerNorm(dim)
 
 		self.to_logits = nn.Linear(dim, dim_out, bias = False)
 
@@ -398,6 +399,7 @@ class Transformer(nn.Module):
 		x = torch.cat((start_token, x), dim=1)
 
 		x = self.init_norm(x)
+		context = self.enc_norm(context)
 
 
 		# else:
