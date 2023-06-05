@@ -20,6 +20,7 @@ from einops import rearrange, repeat
 # from x_transformers import XTransformer
 from parti.transformer import Transformer
 from .t5 import TextEncoder, get_encoded_dim
+import cv2
 
 # from parti.t5 import t5_encode_text, get_encoded_dim
 
@@ -290,6 +291,26 @@ class Parti(nn.Module):
 		
 		# out_indices = self.transformer(text, img_token_idcs[:-1].cuda())
 		loss , logits = self.transformer(img_token_idcs[:,:-1].to(device), texts = text, labels = img_token_idcs)
+		rand_num = random.randint(0, len(imgs)-1)
+		out_indices_disp = logits[rand_num].detach() # b l e 
+		out_indices_disp = torch.argmax(out_indices_disp, dim=1)
+				# #print(out_indices_disp)
+				# # check if 8193 is present in out_indices_disp 
+				# ind = torch.where(out_indices_disp == 8193)
+				# if len(ind[0]) > 0:
+				# 	eos_index = ind[0]
+				# 	#print(eos_index)
+				# 	# remove the token
+				# 	try:
+				# 		out_indices_disp = torch.cat((out_indices_disp[:eos_index], out_indices_disp[eos_index+1:]))
+				# 	except:
+				# 		print(out_indices_disp[eos_index])
+				# else:
+				# 	out_indices_disp = out_indices_disp[:-1]
+		# # remove the first token
+		output_image = self.vqgan.decode_from_indice(out_indices_disp.unsqueeze(0))
+		output_image = restore(output_image[0])
+		cv2.imwrite("output.png", output_image)
 		# loss , logits = self.transformer(image_token_ids = img_token_idcs.to(device), texts = text, return_loss = True)
 
 
