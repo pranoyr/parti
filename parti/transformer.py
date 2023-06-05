@@ -334,6 +334,8 @@ class Transformer(nn.Module):
 		# self.pos_emb = nn.Embedding(seq_len, dim)
 		self.seq_len = seq_len
 
+		self.init_norm = LayerNorm(dim)
+
 		self.transformer_blocks = TransformerBlocks(dim = dim, **kwargs)
 		self.norm = LayerNorm(dim)
 
@@ -348,6 +350,12 @@ class Transformer(nn.Module):
 		self.start_token = nn.Parameter(torch.randn(dim))
 
 		self.text_embed_proj = nn.Linear(text_embed_dim, dim, bias = False) 
+
+		self.final_norm = LayerNorm(dim)
+
+
+		self.to_logits.weight = self.token_emb.weight
+
 
 
 	def forward(
@@ -389,6 +397,8 @@ class Transformer(nn.Module):
 		start_token = repeat(self.start_token, 'd -> b 1 d', b=b)
 		x = torch.cat((start_token, x), dim=1)
 
+		x = self.init_norm(x)
+
 
 		# else:
 		# 	x = repeat(self.start_token, 'd -> b 1 d', b=b)
@@ -400,9 +410,10 @@ class Transformer(nn.Module):
 			context_mask = rearrange(keep_mask, 'b -> b 1') & context_mask
 
 		# decoder
-		embed = self.transformer_blocks(x, context = context, context_mask = context_mask)
+		x = self.transformer_blocks(x, context = context, context_mask = context_mask)
+
 		# to logits
-		logits = self.to_logits(embed)
+		logits = self.to_logits(x)
 
 		if exists(labels):
 			# calculate loss
@@ -453,7 +464,7 @@ class Transformer(nn.Module):
 			with torch.no_grad():
 
 				# encode text
-				text_embeds, context_mask = self.encode_text(src)
+				text_embeds, context_mask = self.text_encoder(src, "cuda")
 				context = self.text_embed_proj(text_embeds)
 				# context_mask = (text_embeds != 0).any(dim = -1)
 
@@ -461,16 +472,16 @@ class Transformer(nn.Module):
 				gen_seq = torch.empty((1,0), dtype=torch.long, device="cuda")
 
 				for step in range(0, 1024):
-					# dec_output = self.forward_with_cond_scale(gen_seq, context=context, context_mask=context_mask)[:,-1]
-					dec_output = self.forward(gen_seq, context=context, context_mask=context_mask)[:,-1]
+					dec_output = self.forward_with_cond_scale(gen_seq, context=context, context_mask=context_mask)[:,-1]
+					# dec_output = self.forward(gen_seq, context=context, context_mask=context_mask)[:,-1]
 
 		
-					dec_output = F.softmax(dec_output, dim=1)
-					dec_output = torch.argmax(dec_output, dim=1) 
+					# dec_output = F.softmax(dec_output, dim=1)
+					# dec_output = torch.argmax(dec_output, dim=1) 
 		
 
-					# filtered_logits = top_k(dec_output, thres = 0.95)
-					# dec_output = gumbel_sample(filtered_logits, temperature = 1, dim = -1)
+					filtered_logits = top_k(dec_output, thres = 0.9)
+					dec_output = gumbel_sample(filtered_logits, temperature = 1, dim = -1)
 					
 					dec_output = rearrange(dec_output, 'b -> b 1')
 					gen_seq = torch.cat([gen_seq, dec_output], dim=-1)  #  gen -> (1,1024)

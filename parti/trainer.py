@@ -70,7 +70,7 @@ class Trainer():
         )
 
         # self.model = model.to(self.gpu_id)
-        # self.resume_training()
+        self.resume_training()
         #self.model = DDP(self.model, device_ids=[self.gpu_id], find_unused_parameters=True)
     
         
@@ -155,8 +155,14 @@ class Trainer():
         if self.cfg.MODEL.RESUME:
             checkpoint=torch.load(self.cfg.MODEL.RESUME)
             self.model.load_state_dict(checkpoint['state_dict'])
-            self.optimizer.load_state_dict(checkpoint['optimizer'])
-            self.scheduler.load_state_dict(checkpoint['scheduler'])
+            # try:
+            #     self.optimizer.load_state_dict(checkpoint['optimizer'])
+            # except:
+            #     print("Optimizer not found")
+            # try:
+            #     self.scheduler.load_state_dict(checkpoint['scheduler'])
+            # except:
+            #     print("Scheduler not found")
             self.global_step=checkpoint['step']
             print(
                 f"==> Loaded checkpoint '{self.cfg.MODEL.RESUME}' (iteration {self.global_step})")
@@ -204,16 +210,18 @@ class Trainer():
 
                     # torch.cuda.synchronize()
 
+                    lr = self.optimizer.param_groups[0]['lr']
                     train_loader.set_postfix(
                         ordered_dict={
                             "Epoch"      : epoch,
-                            "Loss"       : loss.item()
+                            "Loss"       : loss.item(),
+                            "lr"        : lr
                         }
                     )
 
                     # LOGGING
                     # if self.global_step % self.cfg.PRINT_FREQ == 0:
-                    #     self.accelerator.log({"loss": self.log['loss']}, step=self.global_step)
+                    self.accelerator.log({"loss": loss.item(), "lr": lr}, step=self.global_step)
 
                     # if self.global_step % self.cfg.TRAIN_FREQ == 0:
                     #     wandb.log({'train_loss': loss.item()},

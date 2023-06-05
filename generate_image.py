@@ -97,7 +97,7 @@ def restore(x):
 # ['A kitchen is shown with a variety of items on the counters.']
 # ['A kitchen is shown with a variety of items on the counters.']
 # ['A woman eating fresh vegetables from a bowl.']
-# ['A woman eating fresh vegetables from a bowl.']
+text = ['A woman eating fresh vegetables from a bowl.']
 # ['A baby wearing gloves, lying next to a teddy bear']
 # ['A baby wearing gloves, lying next to a teddy bear']
 # ['A white and beige tiled bathroom and adjoining walk-in closet.']
@@ -121,7 +121,7 @@ def restore(x):
 
 
 # text = ['Man riding a motor bike on a dirt road on the countryside.']
-text = ['A woman wearing a net on her head cutting a cake.']
+# text = ['A woman wearing a net on her head cutting a cake.']
 # text = ["a cat and a dog sitting on a couch"]
 # text = ['A blur motorcycle against a red brick wall.']
 
@@ -139,7 +139,7 @@ model = Parti(cfg).cuda()
 
 
 # load model
-model.load_state_dict(torch.load("checkpoints/checkpoint_iter12000_exp1.pth")['state_dict'])
+model.load_state_dict(torch.load("checkpoints/checkpoint_iter160000_exp1.pth")['state_dict'])
 model.eval()
 
 

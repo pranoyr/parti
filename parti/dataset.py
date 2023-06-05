@@ -20,7 +20,7 @@ class CoCo:
         self.coco = COCO(annFile)
         self.imgids = self.coco.getImgIds()
         self.transform = transform
-        #self.imgids = self.imgids[:1000]
+        self.imgids = self.imgids[:10]
     
     def __getitem__(self, idx):
         imgid = self.imgids[idx]
