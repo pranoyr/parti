@@ -1,7 +1,7 @@
 MODEL:
       NAME: Parti
       TYPE: Transformer
-     # RESUME: checkpoints/checkpoint_iter160000_exp1.pth
+      RESUME: checkpoints/checkpoint_iter6000_exp1.pth
       # PRETRAINED : data/ckpt/res50-PA45.7_MJE72.0_MVE85.3_3dpw.pt
       D_MODEL: 1024
       DEPTH: 6
@@ -24,7 +24,7 @@ DATA:
 TRAIN:
       EPOCHS: 40
       WEIGHT_DECAY: 0.0
-      BASE_LR: 1e-4
+      BASE_LR: 1e-5
       DISTRIBUTED : TRUE
       LR_SCHEDULER:
             NAME: multistep
