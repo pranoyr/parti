@@ -242,7 +242,7 @@ class Parti(nn.Module):
 		dim = 512
 		seq_len = 1024
 		heads = 8
-		depth = 6
+		depth = 8
 		vocab_size = 8192
 
 		# self.transformer = Transformer(          # vit vqgan vae
