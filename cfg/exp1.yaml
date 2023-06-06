@@ -24,16 +24,16 @@ DATA:
 TRAIN:
       EPOCHS: 40
       WEIGHT_DECAY: 0.0
-      BASE_LR: 1e-5
+      BASE_LR: 1e-4
       DISTRIBUTED : TRUE
       LR_SCHEDULER:
-            NAME: multistep
+            NAME: constant_schedule_with_warmup
             # MAX_LR : 1e-3
             # GAMMA: 0.1
             MULTISTEPS: [-1] 
             # T_INIT : 20000
             # LR_MIN : 1e-5
-            WARMUP_T : 10000
+            WARMUP_T : 5000
             # WARMUP_LR_INIT : 1e-6
       OPTIMIZER:
             NAME: adamw

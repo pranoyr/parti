@@ -12,7 +12,7 @@ from tqdm.auto import tqdm
 from torch.utils.data.distributed import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
 import os
-from transformers import get_cosine_schedule_with_warmup
+from transformers import get_cosine_schedule_with_warmup, get_constant_schedule_with_warmup
 from accelerate import Accelerator
 from accelerate.utils import DistributedDataParallelKwargs
 
@@ -147,6 +147,8 @@ class Trainer():
                 x * math.log(end_lr / start_lr) / (lr_find_epochs * len(self.train_loader) - 1))
             self.scheduler=torch.optim.lr_scheduler.LambdaLR(
                 self.optimizer, lr_lambda)
+        elif self.cfg.TRAIN.LR_SCHEDULER.NAME == 'constant_schedule_with_warmup':
+            self.scheduler = get_constant_schedule_with_warmup(self.optimizer, num_warmup_steps=self.cfg.TRAIN.LR_SCHEDULER.WARMUP_T)
 
 
     def resume_training(self):
