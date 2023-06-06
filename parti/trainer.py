@@ -258,8 +258,6 @@ class Trainer():
                         print()
                     self.global_step += 1
 
-            print("Epoch " + str(epoch) + " completed")
-            print()
 
         # Save the final model
         checkpoint_name=self.cfg.CKPT_DIR + \
